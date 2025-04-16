@@ -1,0 +1,21 @@
+{
+    "Lua.diagnostics.globals": [
+        "love"
+    ],
+
+    "code-runner.clearPreviousOutput": true,
+    "code-runner.enableAppInsights": false,
+    "code-runner.customCommand": "",
+    "code-runner.defaultLanguage": "lua",
+    "code-runner.executorMapByGlob": {
+        "*.lua": "./scripts/run.sh ${file}"
+    },
+    "code-runner.showRunCommandInExplorerContextMenu": false,
+    "code-runner.showRunCommandInEditorContextMenu": false,
+    "code-runner.saveFileBeforeRun": true,
+    "code-runner.saveAllFilesBeforeRun": true,
+    "Lua.diagnostics.disable": [
+        "duplicate-set-field",
+        "lowercase-global"
+    ],
+}
