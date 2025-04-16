@@ -7,6 +7,7 @@ require "cardStack"
 require "card"
 require "grabber"
 require "cardDeck"
+require "cardPile"
 
 function love.load()
   love.window.setMode(960, 640)
@@ -85,11 +86,15 @@ function setGame()
   for suitNum, suit in ipairs(suits) do
     for rank = 1, 13 do
       local spritePath = "Art/Cards/card" .. suit .. tostring(rank) .. ".png"
-      table.insert(initDeck, CardClass:new(suitNum, rank, love.graphics.newImage(spritePath), backSprite))
+      local frontSprite = love.graphics.newImage(spritePath)
+      table.insert(initDeck, CardClass:new(suitNum, rank, frontSprite, backSprite))
+      if rank == 1 then
+        table.insert(cardStacks, CardPileClass:new(550 + ((suitNum - 1) * 100) , 30, suitNum, frontSprite))
+      end
     end
   end
 
-  for i = 1, #cardStacks do
+  for i = 1, 7 do
     local count = i
     local selectedCards = {}
 
