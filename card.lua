@@ -1,5 +1,7 @@
 
-require "vector"
+-- require "vector"
+
+-- native sprite size is 140 x 190
 
 CardClass = {}
 
@@ -9,15 +11,26 @@ CARD_STATE = {
   GRABBED = 2
 }
 
-function CardClass:new(xPos, yPos, stack)
+function CardClass:new(suit, rank, faceUpSprite, faceDownSprite)
   local card = {}
   local metadata = {__index = CardClass}
   setmetatable(card, metadata)
   
-  card.position = Vector(xPos, yPos)
-  card.size = Vector(50, 70)
+  card.position = nil
+  card.size = Vector(70, 95)
   card.state = CARD_STATE.IDLE
-  card.stack = stack
+  card.stack = nil
+
+  card.suit = suit
+  card.rank = rank
+  card.isFaceUp = nil
+
+  card.spriteScale = 0.5
+  
+  card.faceUpSprite = faceUpSprite
+  card.faceDownSprite = faceDownSprite
+
+  card.visible = true
   
   return card
 end
@@ -27,23 +40,33 @@ function CardClass:update()
 end
 
 function CardClass:draw()
-  -- NEW: drop shadow for non-idle cards
-  if self.state ~= CARD_STATE.IDLE then
-    love.graphics.setColor(0, 0, 0, 0.8) -- color values [0, 1]
-    local offset = 4 * (self.state == CARD_STATE.GRABBED and 2 or 1)
-    love.graphics.rectangle("fill", self.position.x + offset, self.position.y + offset, self.size.x, self.size.y, 6, 6)
+
+  if self.visible then
+
+    -- NEW: drop shadow for non-idle cards
+    if self.state ~= CARD_STATE.IDLE then
+      love.graphics.setColor(0, 0, 0, 0.8) -- color values [0, 1]
+      local offset = 4 * (self.state == CARD_STATE.GRABBED and 2 or 1)
+      love.graphics.rectangle("fill", self.position.x + offset, self.position.y + offset, self.size.x, self.size.y, 6, 6)
+    end
+
+    love.graphics.setColor(1, 1, 1, 1) -- color values [0, 1]
+
+    if self.isFaceUp then
+      love.graphics.draw(self.faceUpSprite, self.position.x, self.position.y, 0, self.spriteScale, self.spriteScale)
+    else
+      love.graphics.draw(self.faceDownSprite, self.position.x, self.position.y, 0, self.spriteScale, self.spriteScale)
+    end
+
+    -- love.graphics.setColor(0, 0, 0, 1)
+    -- love.graphics.print(tostring(self.state), self.position.x + 20, self.position.y - 20)
   end
-  
-  love.graphics.setColor(0, 0, 0, 1)
-  love.graphics.rectangle("fill", self.position.x - 3, self.position.y - 3, self.size.x + 3, self.size.y + 3, 6, 6)
-  love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.rectangle("fill", self.position.x, self.position.y, self.size.x, self.size.y, 6, 6)
-  
-  love.graphics.print(tostring(self.state), self.position.x + 20, self.position.y - 20)
+
 end
 
 function CardClass:checkForMouseOver(grabber)
-  if self.state == CARD_STATE.GRABBED then
+  if self.state == CARD_STATE.GRABBED or not self.isFaceUp or grabber.seenCard then
+    self.state = CARD_STATE.IDLE
     return
   end
     
@@ -54,14 +77,17 @@ function CardClass:checkForMouseOver(grabber)
     mousePos.y > self.position.y and
     mousePos.y < self.position.y + self.size.y
   
-  self.state = isMouseOver and CARD_STATE.MOUSE_OVER or CARD_STATE.IDLE
-  local isGrabbed = isMouseOver and grabber.isGrabbing
-  
-  if isGrabbed then
-    grabber.isGrabbing = false
-    grabber.heldObject = self
-
-    self.stack:removeCards(self)
+  if isMouseOver then
+    grabber.seenCard = true
+    self.state = CARD_STATE.MOUSE_OVER
+    
+    if grabber.isGrabbing then
+      grabber.isGrabbing = false
+      grabber.heldObject = self
+      self.stack:removeCards(self)
+    end
+  else
+    self.state = CARD_STATE.IDLE
   end
 end
 

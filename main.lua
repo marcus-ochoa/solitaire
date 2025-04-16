@@ -6,6 +6,7 @@ io.stdout:setvbuf("no")
 require "cardStack"
 require "card"
 require "grabber"
+require "cardDeck"
 
 function love.load()
   love.window.setMode(960, 640)
@@ -16,18 +17,11 @@ function love.load()
 
   cardStacks = {}
 
-  table.insert(cardStacks, CardStackClass:new(100, 100, 20))
-  table.insert(cardStacks, CardStackClass:new(400, 100, 20))
+  for i = 1, 7 do
+    table.insert(cardStacks, CardStackClass:new(60 + ((i - 1) * 125), 160, 30))
+  end
 
-  cardStacks[1]:insertCards({
-    CardClass:new(100, 100, cardStacks[1]),
-    CardClass:new(100, 120, cardStacks[1])
-  })
-
-  cardStacks[2]:insertCards({
-    CardClass:new(400, 100, cardStacks[2]),
-    CardClass:new(400, 120, cardStacks[2])
-  })
+  setGame()
 end
 
 function love.update()
@@ -41,9 +35,14 @@ function love.update()
   for _, stack in ipairs(cardStacks) do
     stack:update()
   end
+
+  deck:update()
 end
 
 function love.draw()
+  
+  deck:draw()
+  
   for _, stack in ipairs(cardStacks) do
     stack:draw()
   end
@@ -66,4 +65,51 @@ function checkForMouseMoving()
   for _, stack in ipairs(cardStacks) do
     stack:checkForMouseOverCard(grabber)
   end
+
+  deck:checkForMouseOverDeck(grabber)
+  deck:checkForMouseOverCard(grabber)
+end
+
+function setGame()
+  
+  local backSprite = love.graphics.newImage("Art/Cards/cardBack.png")
+  
+  local initDeck = {}
+
+  local suits = {
+    "Hearts", "Diamonds", "Clubs", "Spades"
+  }
+
+  deck = CardDeckClass:new(30, 30, 130, 30, 20, backSprite)
+
+  for suitNum, suit in ipairs(suits) do
+    for rank = 1, 13 do
+      local spritePath = "Art/Cards/card" .. suit .. tostring(rank) .. ".png"
+      table.insert(initDeck, CardClass:new(suitNum, rank, love.graphics.newImage(spritePath), backSprite))
+    end
+  end
+
+  for i = 1, #cardStacks do
+    local count = i
+    local selectedCards = {}
+
+    while count > 0 do
+      local randomIndex = love.math.random(#initDeck)
+      local card = table.remove(initDeck, randomIndex)
+      table.insert(selectedCards, card)
+      count = count - 1
+    end
+    
+    cardStacks[i]:initInsertCards(selectedCards)
+  end
+
+  local selectedCards = {}
+  
+  while #initDeck > 0 do
+    local randomIndex = love.math.random(#initDeck)
+    local card = table.remove(initDeck, randomIndex)
+    table.insert(selectedCards, card)
+  end
+
+  deck:initInsertCards(selectedCards)
 end

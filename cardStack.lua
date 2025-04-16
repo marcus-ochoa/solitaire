@@ -1,5 +1,6 @@
-require "vector"
-require "card"
+
+-- require "vector"
+-- require "card"
 
 CardStackClass = {}
 
@@ -11,7 +12,7 @@ function CardStackClass:new(xPos, yPos, cardOffset)
 
   stack.stack = {}
   stack.position = Vector(xPos, yPos)
-  stack.size = Vector(50, 500)
+  stack.size = Vector(70, 400)
   stack.cardOffset = cardOffset
 
   return stack
@@ -19,7 +20,7 @@ end
 
 function CardStackClass:draw()
   
-  love.graphics.setColor(0.3, 0.3, 0.3, 1)
+  love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
   love.graphics.rectangle("fill", self.position.x, self.position.y, self.size.x, self.size.y)
   
   for _, card in ipairs(self.stack) do
@@ -31,6 +32,17 @@ function CardStackClass:update()
   for _, card in ipairs(self.stack) do
     card:update()
   end
+end
+
+function CardStackClass:initInsertCards(insertTable)
+  for _, card in ipairs(insertTable) do
+    table.insert(self.stack, card)
+    card.stack = self
+    card.position = self.position + Vector(0, (#self.stack - 1) * self.cardOffset)
+    card.isFaceUp = false
+  end
+
+  self.stack[#self.stack].isFaceUp = true
 end
 
 function CardStackClass:insertCards(insertTable)
@@ -69,7 +81,15 @@ end
 
 function CardStackClass:checkForMouseOverCard(grabber)
       
-  for _, card in ipairs(self.stack) do
-    card:checkForMouseOver(grabber)
+  for i = #self.stack, 1, -1 do
+    self.stack[i]:checkForMouseOver(grabber)
+  end
+end
+
+function CardStackClass:cardsMoved()
+  
+  print("cards moved from stack")
+  if (#self.stack > 0) then
+    self.stack[#self.stack].isFaceUp = true
   end
 end

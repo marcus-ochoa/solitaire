@@ -13,6 +13,7 @@ function GrabberClass:new(cardOffset)
 
   grabber.grabPos = nil
 
+  grabber.seenCard = false
   grabber.isGrabbing = false
   grabber.isReleasing = false
 
@@ -29,6 +30,8 @@ function GrabberClass:update()
     love.mouse.getX(),
     love.mouse.getY()
   )
+
+  self.seenCard = false
 
   -- Click (just the first frame)
   if love.mouse.isDown(1) and self.grabPos == nil then
@@ -49,18 +52,16 @@ function GrabberClass:update()
     -- self.heldObject.position = self.currentMousePos
 
     for i, card in ipairs(grabbedTable) do
-      card.position = self.currentMousePos + Vector(0, self.cardOffset * (i - 1))
+      card.position = self.currentMousePos + Vector(-35, self.cardOffset * (i - 1))
     end
   end
 end
 
 function GrabberClass:grab()
   self.grabPos = self.currentMousePos
-  print("GRAB - " .. tostring(self.grabPos))
 end
 
 function GrabberClass:release()
-  print("RELEASE - ")
   -- NEW: some more logic stubs here
   if self.heldObject == nil then -- we have nothing to release
     self.grabPos = nil
@@ -75,7 +76,11 @@ function GrabberClass:release()
   for _, stack in ipairs(cardStacks) do
     if stack:checkForMouseOverStack(grabber) then
       isValidReleasePosition = true
+      if stack ~= self.heldObject.stack then
+        self.heldObject.stack:cardsMoved()
+      end
       stack:insertCards(grabbedTable)
+      break
     end
   end
 
