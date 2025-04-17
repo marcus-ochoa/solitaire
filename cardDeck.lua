@@ -121,8 +121,6 @@ function CardDeckClass:checkForMouseOverDeck(grabber)
     grabber.isGrabbing = false
     self:deckClicked()
   end
-
-  self:checkForMouseOverCard(grabber)
 end
 
 function CardDeckClass:checkForMouseOverCard(grabber)
@@ -134,8 +132,8 @@ end
 function CardDeckClass:cardsMoved()
 
   print("cards moved from deck stack")
-  if #self.deck > 0 then
-    local card = table.remove(self.deck)
+  if #self.discard > 0 then
+    local card = table.remove(self.discard, 1)
     self:replaceCard(card)
   end
 end
@@ -143,7 +141,7 @@ end
 function CardDeckClass:deckClicked()
   
   while #self.stack > 0 do
-    local card = table.remove(self.stack)
+    local card = table.remove(self.stack, 1)
     table.insert(self.discard, 1, card)
     card.visible = false
     card.position = self.deckPosition
@@ -155,7 +153,7 @@ function CardDeckClass:deckClicked()
     for _ = 1, 3 do
       if #self.deck > 0 then
         local card = table.remove(self.deck)
-        table.insert(newCards, 1, card)
+        table.insert(newCards, card)
       end
     end
     self:insertCards(newCards)

@@ -65,7 +65,7 @@ function CardClass:draw()
 end
 
 function CardClass:checkForMouseOver(grabber)
-  if self.state == CARD_STATE.GRABBED or not self.isFaceUp or grabber.seenCard then
+  if self.state == CARD_STATE.GRABBED or (not self.isFaceUp) or grabber.seenCard then
     self.state = CARD_STATE.IDLE
     return
   end

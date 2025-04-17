@@ -67,8 +67,8 @@ function checkForMouseMoving()
     stack:checkForMouseOverCard(grabber)
   end
 
-  deck:checkForMouseOverDeck(grabber)
   deck:checkForMouseOverCard(grabber)
+  deck:checkForMouseOverDeck(grabber)
 end
 
 function setGame()
