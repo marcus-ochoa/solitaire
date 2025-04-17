@@ -93,3 +93,23 @@ function CardStackClass:cardsMoved()
     self.stack[#self.stack].isFaceUp = true
   end
 end
+
+function CardStackClass:checkForValidRelease(grabber)
+  
+  local requiredRank = 13
+  local requiredSuit = true
+  
+  if #self.stack > 0 then
+    requiredRank = self.stack[#self.stack].rank - 1
+
+    if self.stack[#self.stack].suit <= 2 then
+      requiredSuit = (grabbedTable[1].suit > 2)
+    else
+      requiredSuit = (grabbedTable[1].suit <= 2)
+    end
+  end
+
+  local isValidRelease = requiredSuit and (grabbedTable[1].rank == requiredRank)
+
+  return isValidRelease
+end

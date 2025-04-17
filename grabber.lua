@@ -52,7 +52,7 @@ function GrabberClass:update()
     -- self.heldObject.position = self.currentMousePos
 
     for i, card in ipairs(grabbedTable) do
-      card.position = self.currentMousePos + Vector(-35, self.cardOffset * (i - 1))
+      card.position = self.currentMousePos + Vector(-35, (self.cardOffset * (i - 1)) - 45)
     end
   end
 end
@@ -74,12 +74,14 @@ function GrabberClass:release()
   local isValidReleasePosition = false -- *insert actual check instead of "true"*
 
   for _, stack in ipairs(cardStacks) do
-    if stack:checkForMouseOverStack(grabber) then
-      isValidReleasePosition = true
-      if stack ~= self.heldObject.stack then
-        self.heldObject.stack:cardsMoved()
+    if stack:checkForMouseOverStack(self) then
+      isValidReleasePosition = stack:checkForValidRelease(self)
+      if isValidReleasePosition then
+        if stack ~= self.heldObject.stack then
+          self.heldObject.stack:cardsMoved()
+        end
+        stack:insertCards(grabbedTable)
       end
-      stack:insertCards(grabbedTable)
       break
     end
   end

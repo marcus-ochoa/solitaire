@@ -11,6 +11,7 @@ function CardPileClass:new(xPos, yPos, suit, sprite)
   setmetatable(pile, metadata)
 
   pile.stack = {}
+  pile.suit = suit
   pile.position = Vector(xPos, yPos)
   pile.size = Vector(70, 95)
   pile.sprite = sprite
@@ -82,4 +83,20 @@ function CardPileClass:cardsMoved()
   if (#self.stack > 0) then
     self.stack[#self.stack].visible = true
   end
+end
+
+function CardPileClass:checkForValidRelease(grabber)
+  
+  local requiredRank = 1
+  
+  if #self.stack > 0 then
+    requiredRank = self.stack[#self.stack].rank + 1
+  end
+
+  local isValidRelease = 
+    #grabbedTable == 1 and
+    grabbedTable[1].suit == self.suit and
+    grabbedTable[1].rank == requiredRank
+
+  return isValidRelease
 end
