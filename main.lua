@@ -1,6 +1,6 @@
--- Zac Emerzian
--- CMPM 121 - Pickup
--- 4-11-25
+-- Marcus Ochoa
+-- CMPM 121 - Solitaire
+
 io.stdout:setvbuf("no")
 
 require "cardStack"
