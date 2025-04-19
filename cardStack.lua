@@ -12,7 +12,7 @@ function CardStackClass:new(xPos, yPos, cardOffset)
 
   stack.stack = {}
   stack.position = Vector(xPos, yPos)
-  stack.size = Vector(70, 400)
+  stack.size = Vector(70, 500)
   stack.cardOffset = cardOffset
 
   return stack

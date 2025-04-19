@@ -22,7 +22,7 @@ function CardDeckClass:new(xPosDeck, yPosDeck, xPosStack, yPosStack, cardOffset,
   deck.deckPosition = Vector(xPosDeck, yPosDeck)
   deck.stackPosition = Vector(xPosStack, yPosStack)
   deck.deckSize = Vector(70, 95)
-  deck.stackSize = Vector(300, 95)
+  deck.stackSize = Vector(110, 95)
   deck.cardOffset = cardOffset
   deck.deckSprite = deckSprite
   deck.spriteScale = 0.5
