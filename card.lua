@@ -1,7 +1,7 @@
 
--- require "vector"
+-- Native card sprite size is 70 x 95
 
--- native sprite size is 140 x 190
+-- === USED STARTER CODE FROM CLASS == 
 
 CardClass = {}
 
@@ -20,13 +20,10 @@ function CardClass:new(suit, rank, faceUpSprite, faceDownSprite)
   card.size = Vector(70, 95)
   card.state = CARD_STATE.IDLE
   card.stack = nil
-
   card.suit = suit
   card.rank = rank
-  card.isFaceUp = nil
-
+  card.isFaceUp = true
   card.spriteScale = 0.5
-  
   card.faceUpSprite = faceUpSprite
   card.faceDownSprite = faceDownSprite
 
@@ -35,35 +32,29 @@ function CardClass:new(suit, rank, faceUpSprite, faceDownSprite)
   return card
 end
 
-function CardClass:update()
-  -- pass
-end
-
 function CardClass:draw()
 
   if self.visible then
 
-    -- NEW: drop shadow for non-idle cards
+    -- Draw shadow if cards are not idle (light if mouse hovering, heavy if grabbed)
     if self.state ~= CARD_STATE.IDLE then
-      love.graphics.setColor(0, 0, 0, 0.8) -- color values [0, 1]
+      love.graphics.setColor(0, 0, 0, 0.8)
       local offset = 4 * (self.state == CARD_STATE.GRABBED and 2 or 1)
       love.graphics.rectangle("fill", self.position.x + offset, self.position.y + offset, self.size.x, self.size.y, 6, 6)
     end
 
-    love.graphics.setColor(1, 1, 1, 1) -- color values [0, 1]
+    love.graphics.setColor(1, 1, 1, 1)
 
+    -- Draws face up or face down sprite
     if self.isFaceUp then
       love.graphics.draw(self.faceUpSprite, self.position.x, self.position.y, 0, self.spriteScale, self.spriteScale)
     else
       love.graphics.draw(self.faceDownSprite, self.position.x, self.position.y, 0, self.spriteScale, self.spriteScale)
     end
-
-    -- love.graphics.setColor(0, 0, 0, 1)
-    -- love.graphics.print(tostring(self.state), self.position.x + 20, self.position.y - 20)
   end
-
 end
 
+-- Checks if the mouse is over the card and whether it should be grabbed
 function CardClass:checkForMouseOver(grabber)
   if self.state == CARD_STATE.GRABBED or (not self.isFaceUp) or grabber.seenCard then
     self.state = CARD_STATE.IDLE
@@ -78,24 +69,32 @@ function CardClass:checkForMouseOver(grabber)
     mousePos.y < self.position.y + self.size.y
   
   if isMouseOver then
-    grabber.seenCard = true
+
+    -- Set that the grabber has seen a card, so it doesn't see anymore this frame
+    grabber:setSeenCard()
     self.state = CARD_STATE.MOUSE_OVER
     
-    if grabber.isGrabbing then
-      grabber.isGrabbing = false
-      grabber.heldObject = self
-      self.stack:removeCards(self)
+    -- If the card is being grabbed, notify the stack to give over the proper cards
+    if grabber.state == GRABBER_STATE.GRABBING then
+      self.stack:removeCards(self, grabber)
     end
   else
     self.state = CARD_STATE.IDLE
   end
 end
 
-function CardClass:grabbed()
+-- Sets card state to grabbed and inserts card into the grabbed table, called by stack
+function CardClass:grabbed(grabber)
   self.state = CARD_STATE.GRABBED
-  table.insert(grabbedTable, self)
+  grabber:insertCards({self})
 end
 
+-- Sets card state back to idle, called by grabber
 function CardClass:released()
   self.state = CARD_STATE.IDLE
+end
+
+-- Sets card positin, called by grabber
+function CardClass:updatePosition(positionVector)
+  self.position = positionVector
 end

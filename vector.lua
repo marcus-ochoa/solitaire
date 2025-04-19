@@ -1,4 +1,6 @@
 
+-- == TAKEN DIRECTLY FROM CLASS ==
+
 Vector = {}
 
 metatable = { -- Define Vector meta methods

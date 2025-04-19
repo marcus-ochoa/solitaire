@@ -1,7 +1,4 @@
 
--- require "vector"
--- require "card"
-
 CardDeckClass = {}
 
 DECK_STATE = {
@@ -30,14 +27,16 @@ function CardDeckClass:new(xPosDeck, yPosDeck, xPosStack, yPosStack, cardOffset,
   return deck
 end
 
+-- Draws all tables and top cards
 function CardDeckClass:draw()
   
+  -- Draws deck and stack back fills
   love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
   love.graphics.rectangle("fill", self.deckPosition.x, self.deckPosition.y, self.deckSize.x, self.deckSize.y)
-
   love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
   love.graphics.rectangle("fill", self.stackPosition.x, self.stackPosition.y, self.stackSize.x, self.stackSize.y)
 
+  -- Draws deck, faded if all cards in discard or nothing if no more cards at all
   if (#self.deck > 0) or (#self.discard > 0) then
     if self.state == DECK_STATE.MOUSE_OVER then
       love.graphics.setColor(0, 0, 0, 0.8) -- color values [0, 1]
@@ -54,23 +53,13 @@ function CardDeckClass:draw()
     love.graphics.draw(self.deckSprite, self.deckPosition.x, self.deckPosition.y, 0, self.spriteScale, self.spriteScale)
   end
   
+  -- Draws all cards in stack
   for _, card in ipairs(self.stack) do
     card:draw()
   end
 end
 
-function CardDeckClass:update()
-  for _, card in ipairs(self.stack) do
-    card:update()
-  end
-  for _, card in ipairs(self.deck) do
-    card:update()
-  end
-  for _, card in ipairs(self.discard) do
-    card:update()
-  end
-end
-
+-- Inserts cards into deck, called by main on load
 function CardDeckClass:initInsertCards(insertTable)
   for _, card in ipairs(insertTable) do
     table.insert(self.deck, card)
@@ -81,7 +70,11 @@ function CardDeckClass:initInsertCards(insertTable)
   end
 end
 
+-- Inserts cards into stack, called by grabber 
 function CardDeckClass:insertCards(insertTable)
+  if #self.stack > 0 then
+    self.stack[#self.stack].state = CARD_STATE.IDLE
+  end
   for _, card in ipairs(insertTable) do
     table.insert(self.stack, card)
     card.stack = self
@@ -90,8 +83,9 @@ function CardDeckClass:insertCards(insertTable)
   end
 end
 
+
+-- Replaces card in the draw stack
 function CardDeckClass:replaceCard(replacementCard)
-  print("replacing card, stack length before is: ", #self.stack)
   table.insert(self.stack, 1, replacementCard)
   replacementCard.stack = self
   replacementCard.visible = true
@@ -100,11 +94,15 @@ function CardDeckClass:replaceCard(replacementCard)
   end
 end
 
-function CardDeckClass:removeCards(grabbedCard)
-  grabbedCard:grabbed()
+-- Removes grabbed card, called by grabber
+function CardDeckClass:removeCards(grabbedCard, grabber)
+  grabber:setGrab(grabbedCard)
+  grabbedCard:grabbed(grabber)
   table.remove(self.stack)
 end
 
+
+-- Check if mouse over the deck (for drawing), called by main
 function CardDeckClass:checkForMouseOverDeck(grabber)
       
   local mousePos = grabber.currentMousePos
@@ -115,29 +113,30 @@ function CardDeckClass:checkForMouseOverDeck(grabber)
     mousePos.y < self.deckPosition.y + self.deckSize.y
   
   self.state = isMouseOver and DECK_STATE.MOUSE_OVER or DECK_STATE.IDLE
-  local isClicked = isMouseOver and grabber.isGrabbing
+  local isClicked = isMouseOver and (grabber.state == GRABBER_STATE.GRABBING)
   
   if isClicked then
-    grabber.isGrabbing = false
+    GrabberClass:setGrab()
     self:deckClicked()
   end
 end
 
+-- Check if mouse is over the top draw card, called by main
 function CardDeckClass:checkForMouseOverCard(grabber)
   if #self.stack > 0 then
     self.stack[#self.stack]:checkForMouseOver(grabber)
   end
 end
 
+-- Replaces card succesfully moved from the draw stack with one from discard, called by grabber
 function CardDeckClass:cardsMoved()
-
-  print("cards moved from deck stack")
   if #self.discard > 0 then
     local card = table.remove(self.discard, 1)
     self:replaceCard(card)
   end
 end
 
+-- Draws three more cards if possible, or resets deck
 function CardDeckClass:deckClicked()
   
   while #self.stack > 0 do

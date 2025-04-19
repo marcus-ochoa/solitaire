@@ -1,7 +1,4 @@
 
--- require "vector"
--- require "card"
-
 CardPileClass = {}
 
 function CardPileClass:new(xPos, yPos, suit, sprite)
@@ -20,11 +17,14 @@ function CardPileClass:new(xPos, yPos, suit, sprite)
   return pile
 end
 
+-- Draws pile or top card
 function CardPileClass:draw()
   
+  -- Draws back fill
   love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
   love.graphics.rectangle("fill", self.position.x, self.position.y, self.size.x, self.size.y)
   
+  -- Draws top card or placeholder ace if none exists
   if #self.stack > 0 then
     self.stack[#self.stack]:draw()
   else
@@ -33,12 +33,7 @@ function CardPileClass:draw()
   end
 end
 
-function CardPileClass:update()
-  for _, card in ipairs(self.stack) do
-    card:update()
-  end
-end
-
+-- Inserts cards into pile, called by grabber
 function CardPileClass:insertCards(insertTable)
   if #self.stack > 0 then
     self.stack[#self.stack].visible = false
@@ -50,14 +45,17 @@ function CardPileClass:insertCards(insertTable)
   card.position = self.position
 end
 
-function CardPileClass:removeCards(grabbedCard)
-  grabbedCard:grabbed()
+-- Removes grabbed card, called by grabber
+function CardPileClass:removeCards(grabbedCard, grabber)
+  grabber:setGrab(grabbedCard)
+  grabbedCard:grabbed(grabber)
   table.remove(self.stack)
   if #self.stack > 0 then
     self.stack[#self.stack].visible = true
   end
 end
 
+-- Check if mouse over the stack (for releasing), called by grabber
 function CardPileClass:checkForMouseOverStack(grabber)
       
   local mousePos = grabber.currentMousePos
@@ -70,6 +68,7 @@ function CardPileClass:checkForMouseOverStack(grabber)
   return isMouseOver
 end
 
+-- Check if mouse is over the top draw card, called by main
 function CardPileClass:checkForMouseOverCard(grabber)
       
   if (#self.stack > 0) then
@@ -77,14 +76,14 @@ function CardPileClass:checkForMouseOverCard(grabber)
   end
 end
 
+-- Shows next card when a card is succesfully moved, called by grabber
 function CardPileClass:cardsMoved()
-  
-  print("cards moved from stack")
   if (#self.stack > 0) then
     self.stack[#self.stack].visible = true
   end
 end
 
+-- Returns whether the grabbed cards can be released here, called by grabber
 function CardPileClass:checkForValidRelease(grabber)
   
   local requiredRank = 1
@@ -93,10 +92,11 @@ function CardPileClass:checkForValidRelease(grabber)
     requiredRank = self.stack[#self.stack].rank + 1
   end
 
+  -- Should be one card of one greater rank than top card and correct suit
   local isValidRelease = 
-    #grabbedTable == 1 and
-    grabbedTable[1].suit == self.suit and
-    grabbedTable[1].rank == requiredRank
+    #grabber.grabbedTable == 1 and
+    grabber.grabbedTable[1].suit == self.suit and
+    grabber.grabbedTable[1].rank == requiredRank
 
   return isValidRelease
 end
