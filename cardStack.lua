@@ -49,17 +49,17 @@ end
 
 -- Removes grabbed cards, called by grabber
 function CardStackClass:removeCards(grabbedCard, grabber)
-  grabber:setGrab(grabbedCard)
+  grabber:setGrab()
   local passedObject = false
 
   -- Grab all cards on top of the grabbed card
   for i, card in ipairs(self.stack) do
     if passedObject then
-      card:grabbed(grabber)
+      grabber:insertCards({card})
       self.stack[i] = nil
     elseif card == grabbedCard then
       passedObject = true
-      card:grabbed(grabber)
+      grabber:insertCards({card})
       self.stack[i] = nil
     end
   end

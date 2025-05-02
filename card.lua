@@ -69,28 +69,27 @@ function CardClass:checkForMouseOver(grabber)
     mousePos.y < self.position.y + self.size.y
   
   if isMouseOver then
-
-    -- Set that the grabber has seen a card, so it doesn't see anymore this frame
-    grabber:setSeenCard()
     self.state = CARD_STATE.MOUSE_OVER
     
     -- If the card is being grabbed, notify the stack to give over the proper cards
     if grabber.state == GRABBER_STATE.GRABBING then
       self.stack:removeCards(self, grabber)
     end
+
+    -- Set that the grabber has seen a card, so it doesn't see anymore this frame
+    grabber:setSeenCard()
   else
     self.state = CARD_STATE.IDLE
   end
 end
 
--- Sets card state to grabbed and inserts card into the grabbed table, called by stack
-function CardClass:grabbed(grabber)
+-- Sets card state to grabbed, called by stack
+function CardClass:setGrabbed()
   self.state = CARD_STATE.GRABBED
-  grabber:insertCards({self})
 end
 
 -- Sets card state back to idle, called by grabber
-function CardClass:released()
+function CardClass:setReleased()
   self.state = CARD_STATE.IDLE
 end
 

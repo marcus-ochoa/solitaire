@@ -8,7 +8,7 @@ GrabberClass = {}
 GRABBER_STATE = {
   IDLE = 0,
   GRABBING = 1,
-  RELEASING = 2
+  GRABBED = 2,
 }
 
 function GrabberClass:new(cardOffset, cardStacks)
@@ -16,15 +16,12 @@ function GrabberClass:new(cardOffset, cardStacks)
   local metadata = {__index = GrabberClass}
   setmetatable(grabber, metadata)
 
-  grabber.previousMousePos = nil
   grabber.currentMousePos = nil
-  grabber.grabPos = nil
   grabber.seenCard = false
   grabber.state = GRABBER_STATE.IDLE
   grabber.grabbedTable = {}
   grabber.cardOffset = cardOffset
   grabber.cardStacks = cardStacks
-  grabber.heldObject = nil
 
   return grabber
 end
@@ -38,22 +35,25 @@ function GrabberClass:update()
   )
 
   self.seenCard = false
-  self.state = GRABBER_STATE.IDLE
 
-  -- Click (just the first frame)
-  if love.mouse.isDown(1) and self.grabPos == nil then
-    self:grab()
+  -- Even if no card was found, mouse is still down
+  if self.state == GRABBER_STATE.GRABBING then
+    self.state = GRABBER_STATE.GRABBED
+  end
+
+  -- Set state to grabbing so other cards know they can be grabbed this frame
+  if love.mouse.isDown(1) and self.state == GRABBER_STATE.IDLE then
     self.state = GRABBER_STATE.GRABBING
   end
   
   -- Release
-  if not love.mouse.isDown(1) and self.grabPos ~= nil then
+  if (not love.mouse.isDown(1)) and self.state == GRABBER_STATE.GRABBED then
     self:release()
-    self.state = GRABBER_STATE.RELEASING
+    self.state = GRABBER_STATE.IDLE
   end
 
   -- Update grabbed card positions
-  if self.heldObject ~= nil then
+  if #self.grabbedTable > 0 then
     for i, card in ipairs(self.grabbedTable) do
       card:updatePosition(self.currentMousePos + Vector(-35, (self.cardOffset * (i - 1)) - 45))
     end
@@ -67,18 +67,9 @@ function GrabberClass:draw()
   end
 end
 
--- Sets grab position
-function GrabberClass:grab()
-  self.grabPos = self.currentMousePos
-end
-
 -- Called by cards or deck button to set the top grabbed card
-function GrabberClass:setGrab(topCard)
-  self.state = GRABBER_STATE.IDLE
-  -- If the deck is clicked, it will not pass a card
-  if topCard then
-    self.heldObject = topCard
-  end
+function GrabberClass:setGrab()
+  self.state = GRABBER_STATE.GRABBED
 end
 
 -- Called by cards to set that the grabber has seen a card
@@ -86,9 +77,10 @@ function GrabberClass:setSeenCard()
   self.seenCard = true
 end
 
--- Inserts cards into grabbed table, called by cards
+-- Inserts cards into grabbed table, called by stack
 function GrabberClass:insertCards(insertTable)
   for _, card in ipairs(insertTable) do
+    card:setGrabbed()
     table.insert(self.grabbedTable, card)
   end
 end
@@ -97,8 +89,7 @@ end
 function GrabberClass:release()
 
   -- Nothing to release if you aren't holding anything
-  if self.heldObject == nil then
-    self.grabPos = nil
+  if #self.grabbedTable <= 0 then
     return
   end
 
@@ -111,8 +102,8 @@ function GrabberClass:release()
 
       -- If over a valid stack, notify previous stack and add cards to grabbed table
       if isValidReleasePosition then
-        if stack ~= self.heldObject.stack then
-          self.heldObject.stack:cardsMoved()
+        if stack ~= self.grabbedTable[1].stack then
+          self.grabbedTable[1].stack:cardsMoved()
         end
         stack:insertCards(self.grabbedTable)
       end
@@ -122,16 +113,14 @@ function GrabberClass:release()
 
   -- If invalid release, put the cards back in the previous stack
   if not isValidReleasePosition then
-    self.heldObject.stack:insertCards(self.grabbedTable)
+    self.grabbedTable[1].stack:insertCards(self.grabbedTable)
   end
 
   -- Release all cards from grabbed table
   for _, card in ipairs(self.grabbedTable) do
-    card:released()
+    card:setReleased()
   end
 
   -- Reset grabbed variables
   self.grabbedTable = {}
-  self.heldObject = nil
-  self.grabPos = nil
 end

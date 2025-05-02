@@ -96,8 +96,8 @@ end
 
 -- Removes grabbed card, called by grabber
 function CardDeckClass:removeCards(grabbedCard, grabber)
-  grabber:setGrab(grabbedCard)
-  grabbedCard:grabbed(grabber)
+  grabber:setGrab()
+  grabber:insertCards({grabbedCard})
   table.remove(self.stack)
 end
 
@@ -116,7 +116,7 @@ function CardDeckClass:checkForMouseOverDeck(grabber)
   local isClicked = isMouseOver and (grabber.state == GRABBER_STATE.GRABBING)
   
   if isClicked then
-    GrabberClass:setGrab()
+    grabber:setGrab()
     self:deckClicked()
   end
 end

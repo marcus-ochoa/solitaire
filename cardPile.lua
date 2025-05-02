@@ -47,8 +47,8 @@ end
 
 -- Removes grabbed card, called by grabber
 function CardPileClass:removeCards(grabbedCard, grabber)
-  grabber:setGrab(grabbedCard)
-  grabbedCard:grabbed(grabber)
+  grabber:setGrab()
+  grabber:insertCards({grabbedCard})
   table.remove(self.stack)
   if #self.stack > 0 then
     self.stack[#self.stack].visible = true
