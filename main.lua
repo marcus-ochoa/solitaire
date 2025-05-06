@@ -3,11 +3,11 @@
 
 io.stdout:setvbuf("no")
 
+require "vector"
 require "cardStack"
 require "card"
 require "grabber"
 require "cardDeck"
-require "cardPile"
 
 local grabber = {}
 local deck = {}
@@ -58,13 +58,13 @@ function setGame()
 
   -- Create 7 stacks (columns) and grabber
   for i = 1, 7 do
-    table.insert(cardStacks, CardStackClass:new(60 + ((i - 1) * 125), 160, 30))
+    table.insert(cardStacks, CardStackClass:new(60 + ((i - 1) * 125), 160))
   end
   grabber = GrabberClass:new(20, cardStacks)
 
   -- Generate card back sprite and make draw deck
   local backSprite = love.graphics.newImage("Art/Cards/cardBack.png")
-  deck = CardDeckClass:new(30, 30, 130, 30, 20, backSprite)
+  deck = CardDeckClass:new(30, 30, 130, 30, backSprite)
 
   -- Create cards and place them into a temp deck, also create 4 card piles (foundations)
   local initDeck = {}
@@ -83,7 +83,7 @@ function setGame()
 
       -- if its an ace, also use the sprite for foundation piles
       if rank == 1 then
-        table.insert(cardStacks, CardPileClass:new(550 + ((suitNum - 1) * 100) , 30, suitNum, frontSprite))
+        table.insert(cardStacks, CardPileClass:new(550 + ((suitNum - 1) * 100), 30, suitNum, frontSprite))
       end
     end
   end

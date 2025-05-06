@@ -93,7 +93,7 @@ function CardClass:setReleased()
   self.state = CARD_STATE.IDLE
 end
 
--- Sets card positin, called by grabber
+-- Sets card position, called by grabber
 function CardClass:updatePosition(positionVector)
   self.position = positionVector
 end

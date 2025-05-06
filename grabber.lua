@@ -1,8 +1,6 @@
 
 -- === USED STARTER CODE FROM CLASS == 
 
-require "vector"
-
 GrabberClass = {}
 
 GRABBER_STATE = {

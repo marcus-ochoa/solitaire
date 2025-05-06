@@ -1,12 +1,12 @@
 
-CardDeckClass = {}
+--[[ CardDeckClass = {}
 
 DECK_STATE = {
   IDLE = 0,
   MOUSE_OVER = 1,
 }
 
-function CardDeckClass:new(xPosDeck, yPosDeck, xPosStack, yPosStack, deckSprite)
+function CardDeckClass:new(xPosDeck, yPosDeck, xPosStack, yPosStack, cardOffset, deckSprite)
   
   local deck = {}
   local metadata = {__index = CardDeckClass}
@@ -14,22 +14,27 @@ function CardDeckClass:new(xPosDeck, yPosDeck, xPosStack, yPosStack, deckSprite)
 
   deck.deck = {}
   deck.discard = {}
+  deck.stack = {}
   deck.state = DECK_STATE.IDLE
   deck.deckPosition = Vector(xPosDeck, yPosDeck)
+  deck.stackPosition = Vector(xPosStack, yPosStack)
   deck.deckSize = Vector(70, 95)
+  deck.stackSize = Vector(110, 95)
+  deck.cardOffset = cardOffset
   deck.deckSprite = deckSprite
   deck.spriteScale = 0.5
-
-  deck.spread = CardSpreadClass:new(xPosStack, yPosStack, deck)
 
   return deck
 end
 
 -- Draws all tables and top cards
 function CardDeckClass:draw()
+  
   -- Draws deck and stack back fills
   love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
   love.graphics.rectangle("fill", self.deckPosition.x, self.deckPosition.y, self.deckSize.x, self.deckSize.y)
+  love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
+  love.graphics.rectangle("fill", self.stackPosition.x, self.stackPosition.y, self.stackSize.x, self.stackSize.y)
 
   -- Draws deck, faded if all cards in discard or nothing if no more cards at all
   if (#self.deck > 0) or (#self.discard > 0) then
@@ -47,8 +52,11 @@ function CardDeckClass:draw()
 
     love.graphics.draw(self.deckSprite, self.deckPosition.x, self.deckPosition.y, 0, self.spriteScale, self.spriteScale)
   end
-
-  self.spread:draw()
+  
+  -- Draws all cards in stack
+  for _, card in ipairs(self.stack) do
+    card:draw()
+  end
 end
 
 -- Inserts cards into deck, called by main on load
@@ -58,9 +66,41 @@ function CardDeckClass:initInsertCards(insertTable)
     card.stack = self
     card.position = self.deckPosition
     card.isFaceUp = true
+    card.visible = false
+  end
+end
+
+-- Inserts cards into stack, called by grabber 
+function CardDeckClass:insertCards(insertTable)
+  if #self.stack > 0 then
+    self.stack[#self.stack].state = CARD_STATE.IDLE
+  end
+  for _, card in ipairs(insertTable) do
+    table.insert(self.stack, card)
+    card.stack = self
+    card.position = self.stackPosition + Vector((#self.stack - 1) * self.cardOffset, 0)
     card.visible = true
   end
 end
+
+
+-- Replaces card in the draw stack
+function CardDeckClass:replaceCard(replacementCard)
+  table.insert(self.stack, 1, replacementCard)
+  replacementCard.stack = self
+  replacementCard.visible = true
+  for i, card in ipairs(self.stack) do
+    card.position = self.stackPosition + Vector((i - 1) * self.cardOffset, 0)
+  end
+end
+
+-- Removes grabbed card, called by grabber
+function CardDeckClass:removeCards(grabbedCard, grabber)
+  grabber:setGrab()
+  grabber:insertCards({grabbedCard})
+  table.remove(self.stack)
+end
+
 
 -- Check if mouse over the deck (for drawing), called by main
 function CardDeckClass:checkForMouseOverDeck(grabber)
@@ -83,26 +123,26 @@ end
 
 -- Check if mouse is over the top draw card, called by main
 function CardDeckClass:checkForMouseOverCard(grabber)
-  self.spread:checkForMouseOverCard(grabber)
+  if #self.stack > 0 then
+    self.stack[#self.stack]:checkForMouseOver(grabber)
+  end
 end
 
--- Replaces card succesfully moved from the draw stack with one from discard, called by spread
-function CardDeckClass:onCardsMoved()
-  print("cards moved")
+-- Replaces card succesfully moved from the draw stack with one from discard, called by grabber
+function CardDeckClass:cardsMoved()
   if #self.discard > 0 then
-    print("replacing card")
     local card = table.remove(self.discard, 1)
-    self.spread:replaceCard(card)
+    self:replaceCard(card)
   end
 end
 
 -- Draws three more cards if possible, or resets deck
 function CardDeckClass:deckClicked()
   
-  while #self.spread.stack > 0 do
-    local card = table.remove(self.spread.stack, 1)
+  while #self.stack > 0 do
+    local card = table.remove(self.stack, 1)
     table.insert(self.discard, 1, card)
-    card.visible = true
+    card.visible = false
     card.position = self.deckPosition
   end
   
@@ -115,10 +155,10 @@ function CardDeckClass:deckClicked()
         table.insert(newCards, card)
       end
     end
-    self.spread:insertCards(newCards)
+    self:insertCards(newCards)
   
   else
     self.deck = self.discard
     self.discard = {}
   end
-end
+end ]]

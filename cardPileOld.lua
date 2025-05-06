@@ -1,5 +1,5 @@
 
-CardPileClass = {}
+--[[ CardPileClass = {}
 
 function CardPileClass:new(xPos, yPos, suit, sprite)
   
@@ -99,4 +99,4 @@ function CardPileClass:checkForValidRelease(grabber)
     grabber.grabbedTable[1].rank == requiredRank
 
   return isValidRelease
-end
+end ]]
