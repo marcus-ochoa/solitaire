@@ -74,3 +74,10 @@ end
 function CardClass:setReleased()
   self.state = CARD_STATE.IDLE
 end
+
+-- Sets card state back to idle, called by grabber
+function CardClass:setIdle()
+  if self.state ~= CARD_STATE.GRABBED then
+    self.state = CARD_STATE.IDLE
+  end
+end

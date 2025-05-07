@@ -4,15 +4,15 @@
 io.stdout:setvbuf("no")
 
 require "vector"
-require "cardStack"
+require "pile"
 require "card"
 require "grabber"
 require "button"
-require "cardDeck"
+require "deck"
 
 local grabber = {}
 local deck = {}
-local cardStacks = {}
+local piles = {}
 local buttons = {}
 
 function love.load()
@@ -31,7 +31,7 @@ function love.draw()
     button:draw()
   end
 
-  for _, stack in ipairs(cardStacks) do
+  for _, stack in ipairs(piles) do
     stack:draw()
   end
 end
@@ -57,12 +57,14 @@ function loadGame()
 
   -- Create 7 stacks (columns) and grabber
   for i = 1, 7 do
-    table.insert(cardStacks, CardStackClass:new(60 + ((i - 1) * 125), 160))
+    table.insert(piles, PileClass:new(60 + ((i - 1) * 125), 160))
   end
   -- Generate card back sprite and make draw deck
   local backSprite = love.graphics.newImage("Art/Cards/cardBack.png")
-  deck = CardDeckClass:new(60, 30, 160, 30, backSprite)
-  table.insert(cardStacks, deck.spread)
+  deck = DeckClass:new(60, 30, 160, 30, backSprite)
+  table.insert(piles, deck.discardPile)
+  table.insert(piles, deck.deckPile)
+  table.insert(piles, deck.drawPile)
   table.insert(buttons, deck.button)
 
   -- Create cards and place them into a temp deck, also create 4 card piles (foundations)
@@ -82,13 +84,13 @@ function loadGame()
 
       -- if its an ace, also use the sprite for foundation piles
       if rank == 1 then
-        table.insert(cardStacks, CardPileClass:new(510 + ((suitNum - 1) * 100), 30, suitNum, frontSprite))
+        table.insert(piles, SuitPileClass:new(510 + ((suitNum - 1) * 100), 30, suitNum, frontSprite))
       end
     end
   end
 
-  grabber = GrabberClass:new(cardStacks, buttons)
-  table.insert(cardStacks, grabber.grabbedPile)
+  grabber = GrabberClass:new(piles, buttons)
+  table.insert(piles, grabber.grabbedPile)
 
   table.insert(buttons, ButtonClass:new(800, 680, 100, 50, nil, resetGame))
 
@@ -98,8 +100,9 @@ end
 function resetGame()
   local resetDeck = {}
 
-  for _, stack in ipairs(cardStacks) do
+  for _, stack in ipairs(piles) do
     for _, card in ipairs(stack:removeCards()) do
+      card.isFaceUp = true
       table.insert(resetDeck, card)
     end
   end
@@ -121,7 +124,7 @@ function setGame(tempDeck)
       count = count - 1
     end
     
-    cardStacks[i]:initInsertCards(selectedCards)
+    piles[i]:initInsertCards(selectedCards)
   end
 
   -- Insert rest of cards randomly into draw deck
@@ -134,4 +137,17 @@ function setGame(tempDeck)
   end
 
   deck:initInsertCards(selectedCards)
+end
+
+local winCheck = {0, 0, 0, 0}
+
+function checkWinCondition(pile, card)
+  winCheck[pile.suit] = card.rank
+  for _, rank in ipairs(winCheck) do
+    if rank ~= 13 then
+      return
+    end
+  end
+
+  print("YOU WIN!")
 end

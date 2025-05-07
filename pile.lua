@@ -1,10 +1,10 @@
 
-CardStackClass = {}
+PileClass = {}
 
-function CardStackClass:new(xPos, yPos)
+function PileClass:new(xPos, yPos)
   
   local stack = {}
-  local metadata = {__index = CardStackClass}
+  local metadata = {__index = PileClass}
   setmetatable(stack, metadata)
 
   stack.stack = {}
@@ -23,7 +23,7 @@ function CardStackClass:new(xPos, yPos)
 end
 
 -- Draws back fill and cards
-function CardStackClass:draw()
+function PileClass:draw()
 
   if self.background then
     love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
@@ -36,10 +36,6 @@ function CardStackClass:draw()
       self.stack[i]:draw()
     end
 
-    for _, card in ipairs(self.stack) do
-      card:draw()
-    end
-
   elseif self.emptySprite ~= nil then
     love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
     love.graphics.draw(self.emptySprite, self.position.x, self.position.y, 0, self.emptySpriteScale, self.emptySpriteScale)
@@ -47,7 +43,7 @@ function CardStackClass:draw()
 end
 
 -- Inserts inital cards into stack, called by main on load
-function CardStackClass:initInsertCards(insertTable)
+function PileClass:initInsertCards(insertTable)
   for _, card in ipairs(insertTable) do
     table.insert(self.stack, card)
     card.position = self.position + ((#self.stack - 1) * self.cardOffset)
@@ -58,19 +54,24 @@ function CardStackClass:initInsertCards(insertTable)
 end
 
 -- Inserts cards into stack, called by grabber 
-function CardStackClass:insertCards(insertTable)
+function PileClass:insertCards(insertTable)
   for _, card in ipairs(insertTable) do
+    self:onCardInserted(card)
     table.insert(self.stack, card)
     card.position = self.position + ((#self.stack - 1) * self.cardOffset)
   end
 
   for _, card in ipairs(self.stack) do
-    card:setReleased()
+    card:setIdle()
   end
 end
 
+function PileClass:onCardInserted(card)
+  -- TO BE OVERRIDEN
+end
+
 -- Removes grabbed cards, called by grabber
-function CardStackClass:removeCards(grabbedCard)
+function PileClass:removeCards(grabbedCard)
 
   local removedCards = {}
 
@@ -87,10 +88,12 @@ function CardStackClass:removeCards(grabbedCard)
   -- Grab all cards on top of the grabbed card
   for i, card in ipairs(self.stack) do
     if passedObject then
+      self:onCardRemoved(card)
       table.insert(removedCards, card)
       self.stack[i] = nil
     elseif card == grabbedCard then
       passedObject = true
+      self:onCardRemoved(card)
       table.insert(removedCards, card)
       self.stack[i] = nil
     end
@@ -99,8 +102,12 @@ function CardStackClass:removeCards(grabbedCard)
   return removedCards
 end
 
+function PileClass:onCardRemoved(card)
+  -- TO BE OVERRIDEN
+end
+
 -- Check if mouse over the stack (for releasing), called by grabber
-function CardStackClass:checkForMouseOverStack(x, y)
+function PileClass:checkForMouseOverStack(x, y)
   local isMouseOver = 
     x > self.position.x and
     x < self.position.x + self.size.x and
@@ -111,7 +118,7 @@ function CardStackClass:checkForMouseOverStack(x, y)
 end
 
 -- Check if mouse is over cards, check from bottom to top
-function CardStackClass:checkForMouseOverCard(x, y)
+function PileClass:checkForMouseOverCard(x, y)
   for i = #self.stack, 1, -1 do
     if (#self.stack - i >= self.grabLimit) then break end
     if self.stack[i]:checkForMouseOver(x, y) then
@@ -123,7 +130,7 @@ function CardStackClass:checkForMouseOverCard(x, y)
 end
 
 -- Reveals next card when a card is succesfully moved, called by grabber
-function CardStackClass:cardsMoved()
+function PileClass:cardsMoved()
   if (#self.stack > 0) then
     self.stack[#self.stack].isFaceUp = true
   end
@@ -131,7 +138,7 @@ end
 
 -- Returns whether the grabbed cards can be released here, called by grabber
 -- OVERWRITE
-function CardStackClass:checkForValidRelease(pile)
+function PileClass:checkForValidRelease(pile)
   
   local requiredRank = 13
   local requiredSuit = true
@@ -154,15 +161,15 @@ end
 
 
 -- =====================
--- == CARD PILE CLASS ==
+-- == SUIT PILE CLASS ==
 -- =====================
 
-CardPileClass = CardStackClass:new()
+SuitPileClass = PileClass:new()
 
-function CardPileClass:new(xPos, yPos, suit, emptySprite)
+function SuitPileClass:new(xPos, yPos, suit, emptySprite)
   
   local stack = {}
-  local metadata = {__index = CardPileClass}
+  local metadata = {__index = SuitPileClass}
   setmetatable(stack, metadata)
 
   stack.stack = {}
@@ -182,8 +189,13 @@ function CardPileClass:new(xPos, yPos, suit, emptySprite)
   return stack
 end
 
+-- Inserts cards into stack, called by grabber 
+function SuitPileClass:onCardInserted(card)
+  checkWinCondition(self, card)
+end
+
 -- Returns whether the grabbed cards can be released here, called by grabber
-function CardPileClass:checkForValidRelease(pile)
+function SuitPileClass:checkForValidRelease(pile)
   
   local requiredRank = 1
   
@@ -201,16 +213,16 @@ function CardPileClass:checkForValidRelease(pile)
 end
 
 
--- =======================
--- == CARD SPREAD CLASS ==
--- =======================
+-- =====================
+-- == DRAW PILE CLASS ==
+-- =====================
 
-CardSpreadClass = CardStackClass:new()
+DrawPileClass = PileClass:new()
 
-function CardSpreadClass:new(xPos, yPos, owner)
+function DrawPileClass:new(xPos, yPos, owner)
   
   local stack = {}
-  local metadata = {__index = CardSpreadClass}
+  local metadata = {__index = DrawPileClass}
   setmetatable(stack, metadata)
 
   stack.stack = {}
@@ -228,11 +240,11 @@ function CardSpreadClass:new(xPos, yPos, owner)
 end
 
 -- Returns whether the grabbed cards can be released here, called by grabber
-function CardSpreadClass:checkForValidRelease(pile)
+function DrawPileClass:checkForValidRelease(pile)
   return false
 end
 
-function CardSpreadClass:replaceCard(replacementCard)
+function DrawPileClass:replaceCard(replacementCard)
   table.insert(self.stack, 1, replacementCard)
 
   for i, card in ipairs(self.stack) do
@@ -241,16 +253,16 @@ function CardSpreadClass:replaceCard(replacementCard)
 end
 
 -- Reveals next card when a card is succesfully moved, called by grabber
-function CardSpreadClass:cardsMoved()
+function DrawPileClass:cardsMoved()
   self.owner:onCardsMoved()
 end
 
 
--- ==============================
--- == CARD GRABBER STACK CLASS ==
--- ==============================
+-- ========================
+-- == GRABBER PILE CLASS ==
+-- ========================
 
-GrabbedPileClass = CardStackClass:new()
+GrabbedPileClass = PileClass:new()
 
 function GrabbedPileClass:new()
   
@@ -274,16 +286,13 @@ function GrabbedPileClass:new()
 end
 
 -- Inserts cards into stack, called by grabber 
-function GrabbedPileClass:insertCards(insertTable)
-  for _, card in ipairs(insertTable) do
-    card:setGrabbed()
-    table.insert(self.stack, card)
-    card.position = self.position + ((#self.stack - 1) * self.cardOffset)
-  end
+function GrabbedPileClass:onCardInserted(card)
+  card:setGrabbed()
+end
 
-  for _, card in ipairs(self.stack) do
-    card:setReleased()
-  end
+-- Removes grabbed cards, called by grabber
+function GrabbedPileClass:onCardRemoved(card)
+  card:setReleased()
 end
 
 function GrabbedPileClass:updatePosition(x, y)
@@ -293,34 +302,28 @@ function GrabbedPileClass:updatePosition(x, y)
   end
 end
 
--- Removes grabbed cards, called by grabber
-function GrabbedPileClass:removeCards(grabbedCard)
 
-  local removedCards = {}
+-- ========================
+-- == MINIMAL PILE CLASS ==
+-- ========================
 
-  if #self.stack <= 0 then
-    return removedCards
-  end
+MinimalPileClass = PileClass:new()
 
-  if grabbedCard == nil then
-    grabbedCard = self.stack[1]
-  end
+function MinimalPileClass:new()
+  
+  local stack = {}
+  local metadata = {__index = MinimalPileClass}
+  setmetatable(stack, metadata)
 
-  local passedObject = false
+  stack.stack = {}
+  stack.position = Vector()
+  stack.size = Vector()
+  stack.cardOffset = Vector()
 
-  -- Grab all cards on top of the grabbed card
-  for i, card in ipairs(self.stack) do
-    if passedObject then
-      card:setReleased()
-      table.insert(removedCards, card)
-      self.stack[i] = nil
-    elseif card == grabbedCard then
-      passedObject = true
-      card:setReleased()
-      table.insert(removedCards, card)
-      self.stack[i] = nil
-    end
-  end
+  stack.grabLimit = 0
+  stack.cardsVisible = 0
 
-  return removedCards
+  stack.background = false
+
+  return stack
 end
