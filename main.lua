@@ -7,16 +7,18 @@ require "vector"
 require "cardStack"
 require "card"
 require "grabber"
+require "button"
 require "cardDeck"
 
 local grabber = {}
 local deck = {}
 local cardStacks = {}
+local buttons = {}
 
 function love.load()
 
   -- Window setup
-  love.window.setMode(960, 720)
+  love.window.setMode(960, 740)
   love.window.setTitle("Soli-tearing My Hair Out")
   love.graphics.setBackgroundColor(0, 0.7, 0.2, 1)
 
@@ -25,7 +27,10 @@ end
 
 -- Draw deck and stacks (which include foundations)
 function love.draw()
-  deck:draw()
+  for _, button in ipairs(buttons) do
+    button:draw()
+  end
+
   for _, stack in ipairs(cardStacks) do
     stack:draw()
   end
@@ -56,8 +61,9 @@ function loadGame()
   end
   -- Generate card back sprite and make draw deck
   local backSprite = love.graphics.newImage("Art/Cards/cardBack.png")
-  deck = CardDeckClass:new(30, 30, 130, 30, backSprite)
+  deck = CardDeckClass:new(60, 30, 160, 30, backSprite)
   table.insert(cardStacks, deck.spread)
+  table.insert(buttons, deck.button)
 
   -- Create cards and place them into a temp deck, also create 4 card piles (foundations)
   local initDeck = {}
@@ -76,13 +82,15 @@ function loadGame()
 
       -- if its an ace, also use the sprite for foundation piles
       if rank == 1 then
-        table.insert(cardStacks, CardPileClass:new(550 + ((suitNum - 1) * 100), 30, suitNum, frontSprite))
+        table.insert(cardStacks, CardPileClass:new(510 + ((suitNum - 1) * 100), 30, suitNum, frontSprite))
       end
     end
   end
 
-  grabber = GrabberClass:new(cardStacks, deck)
+  grabber = GrabberClass:new(cardStacks, buttons)
   table.insert(cardStacks, grabber.grabbedPile)
+
+  table.insert(buttons, ButtonClass:new(800, 680, 100, 50, nil, resetGame))
 
   setGame(initDeck)
 end

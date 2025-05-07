@@ -3,7 +3,7 @@
 
 GrabberClass = {}
 
-function GrabberClass:new(cardStacks, deck)
+function GrabberClass:new(cardStacks, buttons)
   local grabber = {}
   local metadata = {__index = GrabberClass}
   setmetatable(grabber, metadata)
@@ -11,13 +11,18 @@ function GrabberClass:new(cardStacks, deck)
   grabber.grabbedPile = GrabbedPileClass:new()
 
   grabber.cardStacks = cardStacks
-  grabber.deck = deck
+  grabber.buttons = buttons
+  grabber.prevStack = nil
 
   return grabber
 end
 
 function GrabberClass:onMouseMoved(x, y)
-  self.deck:checkForMouseOverDeck(x, y)
+
+  for _, button in ipairs(self.buttons) do
+    button:checkForMouseOver(x, y)
+  end
+
   for _, stack in ipairs(self.cardStacks) do
     stack:checkForMouseOverCard(x, y)
   end
@@ -27,15 +32,18 @@ end
 
 function GrabberClass:onMousePressed(x, y)
 
-  if self.deck:checkForMouseOverDeck(x, y) then
-    self.deck:deckClicked()
-    return
+  for _, button in ipairs(self.buttons) do
+    if button:checkForMouseOver(x, y) then
+      button:onClicked()
+      return
+    end
   end
 
   for _, stack in ipairs(self.cardStacks) do
     local card = stack:checkForMouseOverCard(x, y)
     if card ~= nil then
       self.grabbedPile:insertCards(stack:removeCards(card))
+      self.prevStack = stack
       return
     end
   end
@@ -58,18 +66,18 @@ function GrabberClass:onMouseReleased(x, y)
 
       -- If over a valid stack, notify previous stack and add cards to grabbed table
       if isValidReleasePosition then
-        if stack ~= self.grabbedPile.stack[1].stack then
-          self.grabbedPile.stack[1].stack:cardsMoved()
+        if stack ~= self.prevStack then
+          self.prevStack:cardsMoved()
         end
         stack:insertCards(self.grabbedPile:removeCards())
       end
-      
+
       break
     end
   end
 
   -- If invalid release, put the cards back in the previous stack
   if not isValidReleasePosition then
-    self.grabbedPile.stack[1].stack:insertCards(self.grabbedPile:removeCards())
+    self.prevStack:insertCards(self.grabbedPile:removeCards())
   end
 end

@@ -50,7 +50,6 @@ end
 function CardStackClass:initInsertCards(insertTable)
   for _, card in ipairs(insertTable) do
     table.insert(self.stack, card)
-    card.stack = self
     card.position = self.position + ((#self.stack - 1) * self.cardOffset)
     card.isFaceUp = false
   end
@@ -62,8 +61,11 @@ end
 function CardStackClass:insertCards(insertTable)
   for _, card in ipairs(insertTable) do
     table.insert(self.stack, card)
-    card.stack = self
     card.position = self.position + ((#self.stack - 1) * self.cardOffset)
+  end
+
+  for _, card in ipairs(self.stack) do
+    card:setReleased()
   end
 end
 
@@ -232,7 +234,6 @@ end
 
 function CardSpreadClass:replaceCard(replacementCard)
   table.insert(self.stack, 1, replacementCard)
-  replacementCard.stack = self
 
   for i, card in ipairs(self.stack) do
     card.position = self.position + ((i - 1) * self.cardOffset)
@@ -278,6 +279,10 @@ function GrabbedPileClass:insertCards(insertTable)
     card:setGrabbed()
     table.insert(self.stack, card)
     card.position = self.position + ((#self.stack - 1) * self.cardOffset)
+  end
+
+  for _, card in ipairs(self.stack) do
+    card:setReleased()
   end
 end
 

@@ -19,7 +19,6 @@ function CardClass:new(suit, rank, faceUpSprite, faceDownSprite)
   card.position = nil
   card.size = Vector(70, 95)
   card.state = CARD_STATE.IDLE
-  card.stack = nil
   card.suit = suit
   card.rank = rank
   card.isFaceUp = true
