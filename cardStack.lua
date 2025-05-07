@@ -17,14 +17,18 @@ function CardStackClass:new(xPos, yPos)
   stack.grabLimit = 100
   stack.cardsVisible = 100
 
+  stack.background = true
+
   return stack
 end
 
 -- Draws back fill and cards
 function CardStackClass:draw()
 
-  love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
-  love.graphics.rectangle("fill", self.position.x, self.position.y, self.size.x, self.size.y)
+  if self.background then
+    love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
+    love.graphics.rectangle("fill", self.position.x, self.position.y, self.size.x, self.size.y)
+  end
 
   -- Draws cards or empty sprite
   if #self.stack > 0 then
@@ -64,42 +68,56 @@ function CardStackClass:insertCards(insertTable)
 end
 
 -- Removes grabbed cards, called by grabber
-function CardStackClass:removeCards(grabbedCard, grabber)
-  grabber:setGrab()
+function CardStackClass:removeCards(grabbedCard)
+
+  local removedCards = {}
+
+  if #self.stack <= 0 then
+    return removedCards
+  end
+
+  if grabbedCard == nil then
+    grabbedCard = self.stack[1]
+  end
+
   local passedObject = false
 
   -- Grab all cards on top of the grabbed card
   for i, card in ipairs(self.stack) do
     if passedObject then
-      grabber:insertCards({card})
+      table.insert(removedCards, card)
       self.stack[i] = nil
     elseif card == grabbedCard then
       passedObject = true
-      grabber:insertCards({card})
+      table.insert(removedCards, card)
       self.stack[i] = nil
     end
   end
+
+  return removedCards
 end
 
 -- Check if mouse over the stack (for releasing), called by grabber
-function CardStackClass:checkForMouseOverStack(grabber)
-      
-  local mousePos = grabber.currentMousePos
+function CardStackClass:checkForMouseOverStack(x, y)
   local isMouseOver = 
-    mousePos.x > self.position.x and
-    mousePos.x < self.position.x + self.size.x and
-    mousePos.y > self.position.y and
-    mousePos.y < self.position.y + self.size.y
+    x > self.position.x and
+    x < self.position.x + self.size.x and
+    y > self.position.y and
+    y < self.position.y + self.size.y
   
   return isMouseOver
 end
 
 -- Check if mouse is over cards, check from bottom to top
-function CardStackClass:checkForMouseOverCard(grabber)
+function CardStackClass:checkForMouseOverCard(x, y)
   for i = #self.stack, 1, -1 do
     if (#self.stack - i >= self.grabLimit) then break end
-    self.stack[i]:checkForMouseOver(grabber)
+    if self.stack[i]:checkForMouseOver(x, y) then
+      return self.stack[i]
+    end
   end
+
+  return nil
 end
 
 -- Reveals next card when a card is succesfully moved, called by grabber
@@ -111,7 +129,7 @@ end
 
 -- Returns whether the grabbed cards can be released here, called by grabber
 -- OVERWRITE
-function CardStackClass:checkForValidRelease(grabber)
+function CardStackClass:checkForValidRelease(pile)
   
   local requiredRank = 13
   local requiredSuit = true
@@ -120,19 +138,22 @@ function CardStackClass:checkForValidRelease(grabber)
     requiredRank = self.stack[#self.stack].rank - 1
 
     if self.stack[#self.stack].suit <= 2 then
-      requiredSuit = (grabber.grabbedTable[1].suit > 2)
+      requiredSuit = (pile.stack[1].suit > 2)
     else
-      requiredSuit = (grabber.grabbedTable[1].suit <= 2)
+      requiredSuit = (pile.stack[1].suit <= 2)
     end
   end
 
   -- Should be one card of one lesser rank than top card and alternated suit color
-  local isValidRelease = requiredSuit and (grabber.grabbedTable[1].rank == requiredRank)
+  local isValidRelease = requiredSuit and (pile.stack[1].rank == requiredRank)
 
   return isValidRelease
 end
 
+
+-- =====================
 -- == CARD PILE CLASS ==
+-- =====================
 
 CardPileClass = CardStackClass:new()
 
@@ -154,11 +175,13 @@ function CardPileClass:new(xPos, yPos, suit, emptySprite)
 
   stack.suit = suit
 
+  stack.background = true
+
   return stack
 end
 
 -- Returns whether the grabbed cards can be released here, called by grabber
-function CardPileClass:checkForValidRelease(grabber)
+function CardPileClass:checkForValidRelease(pile)
   
   local requiredRank = 1
   
@@ -168,14 +191,17 @@ function CardPileClass:checkForValidRelease(grabber)
 
   -- Should be one card of one greater rank than top card and correct suit
   local isValidRelease = 
-    #grabber.grabbedTable == 1 and
-    grabber.grabbedTable[1].suit == self.suit and
-    grabber.grabbedTable[1].rank == requiredRank
+    #pile.stack == 1 and
+    pile.stack[1].suit == self.suit and
+    pile.stack[1].rank == requiredRank
 
   return isValidRelease
 end
 
+
+-- =======================
 -- == CARD SPREAD CLASS ==
+-- =======================
 
 CardSpreadClass = CardStackClass:new()
 
@@ -194,11 +220,13 @@ function CardSpreadClass:new(xPos, yPos, owner)
   stack.cardsVisible = 100
   stack.owner = owner
 
+  stack.background = true
+
   return stack
 end
 
 -- Returns whether the grabbed cards can be released here, called by grabber
-function CardSpreadClass:checkForValidRelease(grabber)
+function CardSpreadClass:checkForValidRelease(pile)
   return false
 end
 
@@ -214,4 +242,80 @@ end
 -- Reveals next card when a card is succesfully moved, called by grabber
 function CardSpreadClass:cardsMoved()
   self.owner:onCardsMoved()
+end
+
+
+-- ==============================
+-- == CARD GRABBER STACK CLASS ==
+-- ==============================
+
+GrabbedPileClass = CardStackClass:new()
+
+function GrabbedPileClass:new()
+  
+  local stack = {}
+  local metadata = {__index = GrabbedPileClass}
+  setmetatable(stack, metadata)
+
+  stack.stack = {}
+  stack.position = Vector(0, 0)
+  stack.size = Vector(0, 0)
+  stack.cardOffset = Vector(0, 20)
+
+  stack.stackOffset = Vector(-35, -45)
+
+  stack.grabLimit = 0
+  stack.cardsVisible = 100
+
+  stack.background = false
+
+  return stack
+end
+
+-- Inserts cards into stack, called by grabber 
+function GrabbedPileClass:insertCards(insertTable)
+  for _, card in ipairs(insertTable) do
+    card:setGrabbed()
+    table.insert(self.stack, card)
+    card.position = self.position + ((#self.stack - 1) * self.cardOffset)
+  end
+end
+
+function GrabbedPileClass:updatePosition(x, y)
+  self.position = Vector(x, y) + self.stackOffset
+  for i, card in ipairs(self.stack) do
+    card.position = self.position + ((i - 1) * self.cardOffset)
+  end
+end
+
+-- Removes grabbed cards, called by grabber
+function GrabbedPileClass:removeCards(grabbedCard)
+
+  local removedCards = {}
+
+  if #self.stack <= 0 then
+    return removedCards
+  end
+
+  if grabbedCard == nil then
+    grabbedCard = self.stack[1]
+  end
+
+  local passedObject = false
+
+  -- Grab all cards on top of the grabbed card
+  for i, card in ipairs(self.stack) do
+    if passedObject then
+      card:setReleased()
+      table.insert(removedCards, card)
+      self.stack[i] = nil
+    elseif card == grabbedCard then
+      passedObject = true
+      card:setReleased()
+      table.insert(removedCards, card)
+      self.stack[i] = nil
+    end
+  end
+
+  return removedCards
 end

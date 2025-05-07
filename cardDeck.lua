@@ -47,8 +47,6 @@ function CardDeckClass:draw()
 
     love.graphics.draw(self.deckSprite, self.deckPosition.x, self.deckPosition.y, 0, self.spriteScale, self.spriteScale)
   end
-
-  self.spread:draw()
 end
 
 -- Inserts cards into deck, called by main on load
@@ -58,32 +56,20 @@ function CardDeckClass:initInsertCards(insertTable)
     card.stack = self
     card.position = self.deckPosition
     card.isFaceUp = true
-    card.visible = true
   end
 end
 
 -- Check if mouse over the deck (for drawing), called by main
-function CardDeckClass:checkForMouseOverDeck(grabber)
+function CardDeckClass:checkForMouseOverDeck(x, y)
       
-  local mousePos = grabber.currentMousePos
   local isMouseOver = 
-    mousePos.x > self.deckPosition.x and
-    mousePos.x < self.deckPosition.x + self.deckSize.x and
-    mousePos.y > self.deckPosition.y and
-    mousePos.y < self.deckPosition.y + self.deckSize.y
+    x > self.deckPosition.x and
+    x < self.deckPosition.x + self.deckSize.x and
+    y > self.deckPosition.y and
+    y < self.deckPosition.y + self.deckSize.y
   
   self.state = isMouseOver and DECK_STATE.MOUSE_OVER or DECK_STATE.IDLE
-  local isClicked = isMouseOver and (grabber.state == GRABBER_STATE.GRABBING)
-  
-  if isClicked then
-    grabber:setGrab()
-    self:deckClicked()
-  end
-end
-
--- Check if mouse is over the top draw card, called by main
-function CardDeckClass:checkForMouseOverCard(grabber)
-  self.spread:checkForMouseOverCard(grabber)
+  return isMouseOver
 end
 
 -- Replaces card succesfully moved from the draw stack with one from discard, called by spread
@@ -102,7 +88,6 @@ function CardDeckClass:deckClicked()
   while #self.spread.stack > 0 do
     local card = table.remove(self.spread.stack, 1)
     table.insert(self.discard, 1, card)
-    card.visible = true
     card.position = self.deckPosition
   end
   
