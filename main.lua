@@ -92,7 +92,7 @@ function loadGame()
   grabber = GrabberClass:new(piles, buttons)
   table.insert(piles, grabber.grabbedPile)
 
-  table.insert(buttons, ButtonClass:new(800, 680, 100, 50, nil, resetGame))
+  table.insert(buttons, ButtonClass:new(800, 680, 100, 50, nil, resetGame, nil, nil, nil, "RESET"))
 
   setGame(initDeck)
 end
@@ -137,6 +137,8 @@ function setGame(tempDeck)
   end
 
   deck:initInsertCards(selectedCards)
+
+  buttons[2].text = "RESET"
 end
 
 local winCheck = {0, 0, 0, 0}
@@ -149,5 +151,6 @@ function checkWinCondition(pile, card)
     end
   end
 
-  print("YOU WIN!")
+  buttons[2].text = "YOU WIN (RESET)"
 end
+

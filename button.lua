@@ -11,7 +11,7 @@ BUTTON_STATE = {
   INACTIVE = 2,
 }
 
-function ButtonClass:new(xPos, yPos, xSize, ySize, owner, event, sprite, spriteScale, opacity)
+function ButtonClass:new(xPos, yPos, xSize, ySize, owner, event, sprite, spriteScale, opacity, text)
   local button = {}
   local metadata = {__index = ButtonClass}
   setmetatable(button, metadata)
@@ -24,6 +24,7 @@ function ButtonClass:new(xPos, yPos, xSize, ySize, owner, event, sprite, spriteS
   button.opacity = opacity
   button.owner = owner
   button.event = event
+  button.text = text
   
   return button
 end
@@ -48,6 +49,13 @@ function ButtonClass:draw()
     love.graphics.setColor(1, 1, 1, self.opacity)
     love.graphics.draw(self.sprite, self.position.x, self.position.y, 0, self.spriteScale, self.spriteScale)
   end
+
+  if self.text ~= nil then
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.printf(self.text, self.position.x, self.position.y - 8 + (self.size.y / 2), self.size.x, "center")
+  end
+
+
 end
 
 -- Checks if the mouse is over the button and whether it should be clicked
