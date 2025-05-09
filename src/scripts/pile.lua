@@ -1,4 +1,8 @@
 
+-- ==================================
+-- == BASE (FOUNDATION) PILE CLASS ==
+-- ==================================
+
 PileClass = {}
 
 function PileClass:new(xPos, yPos)
@@ -10,32 +14,39 @@ function PileClass:new(xPos, yPos)
   stack.stack = {}
   stack.position = Vector(xPos, yPos)
   stack.size = Vector(70, 500)
+
+  -- Offset from one card in the stack to the next
   stack.cardOffset = Vector(0, 30)
+
+  -- Sprite to display when stack empty
   stack.emptySprite = nil
   stack.emptySpriteScale = nil
 
+  -- Max amount of cards that can be grabbed from pile
   stack.grabLimit = 100
+
+  -- Amount of cards visible in pile
   stack.cardsVisible = 100
 
+  -- Whether a back fill rectangle should be drawn
   stack.background = true
 
   return stack
 end
 
--- Draws back fill and cards
 function PileClass:draw()
 
+  -- Draws back fill if set
   if self.background then
     love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
     love.graphics.rectangle("fill", self.position.x, self.position.y, self.size.x, self.size.y)
   end
 
-  -- Draws cards or empty sprite
+  -- Draws cards if there are any or empty sprite if set
   if #self.stack > 0 then
     for i = math.max(#self.stack - (self.cardsVisible - 1), 1), #self.stack do
       self.stack[i]:draw()
     end
-
   elseif self.emptySprite ~= nil then
     love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
     love.graphics.draw(self.emptySprite, self.position.x, self.position.y, 0, self.emptySpriteScale, self.emptySpriteScale)
@@ -53,7 +64,7 @@ function PileClass:initInsertCards(insertTable)
   self.stack[#self.stack].isFaceUp = true
 end
 
--- Inserts cards into stack, called by grabber 
+-- Inserts cards into stack
 function PileClass:insertCards(insertTable)
   for _, card in ipairs(insertTable) do
     self:onCardInserted(card)
@@ -70,7 +81,7 @@ function PileClass:onCardInserted(card)
   -- TO BE OVERRIDEN
 end
 
--- Removes grabbed cards, called by grabber
+-- Removes and returns cards from stack
 function PileClass:removeCards(grabbedCard)
 
   local removedCards = {}
@@ -106,7 +117,7 @@ function PileClass:onCardRemoved(card)
   -- TO BE OVERRIDEN
 end
 
--- Check if mouse over the stack (for releasing), called by grabber
+-- Check if mouse over the stack (for releasing)
 function PileClass:checkForMouseOverStack(x, y)
   local isMouseOver = 
     x > self.position.x and
@@ -117,7 +128,7 @@ function PileClass:checkForMouseOverStack(x, y)
   return isMouseOver
 end
 
--- Check if mouse is over cards, check from bottom to top
+-- Check if mouse is over cards from bottom to top (for grabbing)
 function PileClass:checkForMouseOverCard(x, y)
   for i = #self.stack, 1, -1 do
     if (#self.stack - i >= self.grabLimit) then break end
@@ -129,15 +140,14 @@ function PileClass:checkForMouseOverCard(x, y)
   return nil
 end
 
--- Reveals next card when a card is succesfully moved, called by grabber
+-- Reveals next card when a card is succesfully moved
 function PileClass:cardsMoved()
   if (#self.stack > 0) then
     self.stack[#self.stack].isFaceUp = true
   end
 end
 
--- Returns whether the grabbed cards can be released here, called by grabber
--- OVERWRITE
+-- Returns whether the grabbed cards can be released here
 function PileClass:checkForValidRelease(pile)
   
   local requiredRank = 13
@@ -189,12 +199,12 @@ function SuitPileClass:new(xPos, yPos, suit, emptySprite)
   return stack
 end
 
--- Inserts cards into stack, called by grabber 
+-- Check if the game has been won when a card is added to a suit pile
 function SuitPileClass:onCardInserted(card)
   checkWinCondition(self, card)
 end
 
--- Returns whether the grabbed cards can be released here, called by grabber
+-- Returns whether the grabbed cards can be released here
 function SuitPileClass:checkForValidRelease(pile)
   
   local requiredRank = 1
@@ -219,7 +229,7 @@ end
 
 DrawPileClass = PileClass:new()
 
-function DrawPileClass:new(xPos, yPos, owner)
+function DrawPileClass:new(xPos, yPos, owner, event)
   
   local stack = {}
   local metadata = {__index = DrawPileClass}
@@ -232,7 +242,10 @@ function DrawPileClass:new(xPos, yPos, owner)
 
   stack.grabLimit = 1
   stack.cardsVisible = 100
+
+  -- Owner and function to call when cards moved
   stack.owner = owner
+  stack.event = event
 
   stack.background = true
 
@@ -244,6 +257,7 @@ function DrawPileClass:checkForValidRelease(pile)
   return false
 end
 
+-- Replaces a taken card with a given one (for deck logic)
 function DrawPileClass:replaceCard(replacementCard)
   table.insert(self.stack, 1, replacementCard)
 
@@ -252,9 +266,9 @@ function DrawPileClass:replaceCard(replacementCard)
   end
 end
 
--- Reveals next card when a card is succesfully moved, called by grabber
+-- Calls passed in function when card moved (for deck logic)
 function DrawPileClass:cardsMoved()
-  self.owner:onCardsMoved()
+  self.event(self.owner)
 end
 
 
@@ -265,7 +279,7 @@ end
 GrabbedPileClass = PileClass:new()
 
 function GrabbedPileClass:new()
-  
+
   local stack = {}
   local metadata = {__index = GrabbedPileClass}
   setmetatable(stack, metadata)
@@ -285,16 +299,17 @@ function GrabbedPileClass:new()
   return stack
 end
 
--- Inserts cards into stack, called by grabber 
+-- Sets card to grabbed when inserted
 function GrabbedPileClass:onCardInserted(card)
   card:setGrabbed()
 end
 
--- Removes grabbed cards, called by grabber
+-- Sets card to released when removed
 function GrabbedPileClass:onCardRemoved(card)
   card:setReleased()
 end
 
+-- Updates position pile and all cards in it
 function GrabbedPileClass:updatePosition(x, y)
   self.position = Vector(x, y) + self.stackOffset
   for i, card in ipairs(self.stack) do

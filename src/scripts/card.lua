@@ -30,6 +30,7 @@ function CardClass:new(suit, rank, faceUpSprite, faceDownSprite)
 end
 
 function CardClass:draw()
+  
   -- Draw shadow if cards are not idle (light if mouse hovering, heavy if grabbed)
   if self.state ~= CARD_STATE.IDLE then
     love.graphics.setColor(0, 0, 0, 0.8)
@@ -47,7 +48,7 @@ function CardClass:draw()
   end
 end
 
--- Checks if the mouse is over the card and whether it should be grabbed
+-- Checks if the mouse is over the card and updates state accordingly
 function CardClass:checkForMouseOver(x, y)
 
   if not self.isFaceUp then
@@ -65,17 +66,15 @@ function CardClass:checkForMouseOver(x, y)
   return isMouseOver
 end
 
--- Sets card state to grabbed, called by stack
 function CardClass:setGrabbed()
   self.state = CARD_STATE.GRABBED
 end
 
--- Sets card state back to idle, called by grabber
 function CardClass:setReleased()
   self.state = CARD_STATE.IDLE
 end
 
--- Sets card state back to idle, called by grabber
+-- Sets card state back to idle from mouse over
 function CardClass:setIdle()
   if self.state ~= CARD_STATE.GRABBED then
     self.state = CARD_STATE.IDLE

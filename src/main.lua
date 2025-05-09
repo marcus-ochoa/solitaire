@@ -14,28 +14,31 @@ local grabber = {}
 local deck = {}
 local piles = {}
 local buttons = {}
+local winButton
 
 function love.load()
 
   -- Window setup
-  love.window.setMode(960, 740)
+  love.window.setMode(960, 760)
   love.window.setTitle("Soli-tearing My Hair Out")
   love.graphics.setBackgroundColor(0, 0.7, 0.2, 1)
 
   loadGame()
 end
 
--- Draw deck and stacks (which include foundations)
+-- Draw buttons and piles
 function love.draw()
-  for _, button in ipairs(buttons) do
-    button:draw()
-  end
 
   for _, stack in ipairs(piles) do
     stack:draw()
   end
+
+  for _, button in ipairs(buttons) do
+    button:draw()
+  end
 end
 
+-- Tie engine mouse events to the grabber
 function love.mousereleased(x, y, button)
   if button == 1 then
     grabber:onMouseReleased(x, y)
@@ -52,13 +55,14 @@ function love.mousemoved(x, y)
   grabber:onMouseMoved(x, y)
 end
 
--- Sets up the game
+-- Sets up the game for the first time
 function loadGame()
 
-  -- Create 7 stacks (columns) and grabber
+  -- Create foundations
   for i = 1, 7 do
     table.insert(piles, PileClass:new(60 + ((i - 1) * 125), 160))
   end
+
   -- Generate card back sprite and make draw deck
   local backSprite = love.graphics.newImage("art/cards/cardBack.png")
   deck = DeckClass:new(60, 30, 160, 30, backSprite)
@@ -67,7 +71,7 @@ function loadGame()
   table.insert(piles, deck.drawPile)
   table.insert(buttons, deck.button)
 
-  -- Create cards and place them into a temp deck, also create 4 card piles (foundations)
+  -- Create cards and place them into a temp deck, also create foundations
   local initDeck = {}
 
   local suits = {
@@ -77,26 +81,33 @@ function loadGame()
   for suitNum, suit in ipairs(suits) do
     for rank = 1, 13 do
 
-      -- make each card with a sprite, suit, and rank
+      -- Make each card with a sprite, suit, and rank
       local spritePath = "art/cards/card" .. suit .. tostring(rank) .. ".png"
       local frontSprite = love.graphics.newImage(spritePath)
       table.insert(initDeck, CardClass:new(suitNum, rank, frontSprite, backSprite))
 
-      -- if its an ace, also use the sprite for foundation piles
+      -- If it's an ace, also use the sprite for foundation piles
       if rank == 1 then
         table.insert(piles, SuitPileClass:new(510 + ((suitNum - 1) * 100), 30, suitNum, frontSprite))
       end
     end
   end
 
+  -- New grabber with reference to all piles and buttons
   grabber = GrabberClass:new(piles, buttons)
   table.insert(piles, grabber.grabbedPile)
 
-  table.insert(buttons, ButtonClass:new(800, 680, 100, 50, nil, resetGame, nil, nil, nil, "RESET"))
+  -- Make buttons
+  local resetButton = ButtonClass:new(780, 680, 100, 50, nil, resetGame, nil, nil, nil, "RESET")
+  winButton = ButtonClass:new(25, 25, 910, 710, nil, resetGame, nil, nil, nil, "YOU WIN!\n(click to reset)")
+  winButton.state = BUTTON_STATE.INACTIVE
+  table.insert(buttons, resetButton)
+  table.insert(buttons, winButton)
 
   setGame(initDeck)
 end
 
+-- Resets game when reset button is pressed
 function resetGame()
   local resetDeck = {}
 
@@ -108,11 +119,12 @@ function resetGame()
   end
 
   setGame(resetDeck)
+  winButton.state = BUTTON_STATE.INACTIVE
 end
 
-
 function setGame(tempDeck)
-  -- Randomly place cards from temp deck into columns
+  
+  -- Randomly place cards from temp deck into foundations
   for i = 1, 7 do
     local count = i
     local selectedCards = {}
@@ -137,12 +149,12 @@ function setGame(tempDeck)
   end
 
   deck:initInsertCards(selectedCards)
-
-  buttons[2].text = "RESET"
 end
+
 
 local winCheck = {0, 0, 0, 0}
 
+-- Check if player wins and reveal win button if so
 function checkWinCondition(pile, card)
   winCheck[pile.suit] = card.rank
   for _, rank in ipairs(winCheck) do
@@ -151,6 +163,6 @@ function checkWinCondition(pile, card)
     end
   end
 
-  buttons[2].text = "YOU WIN (RESET)"
+  winButton.state = BUTTON_STATE.IDLE
 end
 
