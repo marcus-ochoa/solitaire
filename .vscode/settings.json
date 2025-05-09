@@ -8,7 +8,7 @@
     "code-runner.customCommand": "",
     "code-runner.defaultLanguage": "lua",
     "code-runner.executorMapByGlob": {
-        "*.lua": "./scripts/run.sh ${file}"
+        "*.lua": "./.dev/run.sh ${file}"
     },
     "code-runner.showRunCommandInExplorerContextMenu": false,
     "code-runner.showRunCommandInEditorContextMenu": false,

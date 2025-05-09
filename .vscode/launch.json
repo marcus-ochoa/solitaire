@@ -10,7 +10,7 @@
             "type": "lua-local",
             "request": "launch",
             "program": {
-                "command": "./scripts/run.sh"
+                "command": "./.dev/run.sh"
             },
             "args": ["${file}", "debug"]
         }
