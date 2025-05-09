@@ -3,11 +3,12 @@
 
 io.stdout:setvbuf("no")
 
-require "cardStack"
-require "card"
-require "grabber"
-require "cardDeck"
-require "cardPile"
+require "scripts.vector"
+require "scripts.cardStack"
+require "scripts.card"
+require "scripts.grabber"
+require "scripts.cardDeck"
+require "scripts.cardPile"
 
 local grabber = {}
 local deck = {}
@@ -63,7 +64,7 @@ function setGame()
   grabber = GrabberClass:new(20, cardStacks)
 
   -- Generate card back sprite and make draw deck
-  local backSprite = love.graphics.newImage("Art/Cards/cardBack.png")
+  local backSprite = love.graphics.newImage("art/cards/cardBack.png")
   deck = CardDeckClass:new(30, 30, 130, 30, 20, backSprite)
 
   -- Create cards and place them into a temp deck, also create 4 card piles (foundations)
@@ -77,7 +78,7 @@ function setGame()
     for rank = 1, 13 do
 
       -- make each card with a sprite, suit, and rank
-      local spritePath = "Art/Cards/card" .. suit .. tostring(rank) .. ".png"
+      local spritePath = "art/cards/card" .. suit .. tostring(rank) .. ".png"
       local frontSprite = love.graphics.newImage(spritePath)
       table.insert(initDeck, CardClass:new(suitNum, rank, frontSprite, backSprite))
 
