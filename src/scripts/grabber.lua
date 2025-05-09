@@ -7,7 +7,6 @@ function GrabberClass:new(piles, buttons)
   local grabber = {}
   local metadata = {__index = GrabberClass}
   setmetatable(grabber, metadata)
-
   grabber.grabbedPile = GrabbedPileClass:new()
 
   grabber.piles = piles
